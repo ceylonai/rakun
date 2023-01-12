@@ -54,18 +54,3 @@ def process(sender, subject=None):
         return func
 
     return decorator
-
-
-async def register(agent, domain, features=None):
-    """
-    Register agent
-    :param agent: agent class
-    :param domain: domain of the agent
-    :param features: list of features
-    :return: agent class
-    """
-    pass
-
-
-async def start(driver=MemoryDriver):
-    pass
