@@ -1,3 +1,4 @@
+from .driver.com import MemoryDriver
 from .rakun import *
 from .features import *
 from .plugins import *
@@ -7,7 +8,7 @@ if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
 
 
-def Agent(name, domain, port, features=None):
+def Agent(name, domain, features=None):
     """
     Decorator for agent class
     :param name: name of the agent
@@ -20,7 +21,6 @@ def Agent(name, domain, port, features=None):
     def decorator(cls):
         cls.__name__ = name
         cls.__domain__ = domain
-        cls.__port__ = port
         cls.__features__ = features
         return cls
 
@@ -56,17 +56,16 @@ def process(sender, subject=None):
     return decorator
 
 
-def register(agent, domain, port, features=None):
+async def register(agent, domain, features=None):
     """
     Register agent
     :param agent: agent class
     :param domain: domain of the agent
-    :param port: port of the agent
     :param features: list of features
     :return: agent class
     """
     pass
 
 
-async def start():
+async def start(driver=MemoryDriver):
     pass

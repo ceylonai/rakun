@@ -1,11 +1,11 @@
 import asyncio
 import rakun as rk
 from rakun import features as rk_features
+from rakun.driver.com import MemoryDriver
 
 
 @rk.Agent(name="SimpleAgent",
           domain="simpleagent@rk",
-          port=5000,
           features=[rk_features.Metric, rk_features.Performance, rk_features.Debug])  # port domain not required
 class SimpleAgent:
     @rk.behave("before_start")
@@ -52,9 +52,10 @@ class SimpleAgent:
 
 
 async def main():
-    rk.register(SimpleAgent, domain="simpleagent@rk", port=5000,
-                features=[rk.features.Metric, rk.features.Performance, rk.features.Debug])  # Here you can override them
-    await rk.start()
+    await rk.register(SimpleAgent, domain="simpleagent@rk",
+                      features=[rk.features.Metric, rk.features.Performance,
+                                rk.features.Debug])  # Here you can override them
+    await rk.start(driver=MemoryDriver)
 
 
 if __name__ == '__main__':
