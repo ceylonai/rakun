@@ -8,7 +8,7 @@ if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
 
 
-def Agent(name, domain, features=None):
+def agent(domain=None, name=None, features=None):
     """
     Decorator for agent class
     :param name: name of the agent

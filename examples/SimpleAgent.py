@@ -4,7 +4,7 @@ from rakun import features as rk_features
 from rakun.driver.com import MemoryDriver
 
 
-@rk.Agent(name="SimpleAgent",
+@rk.agent(name="SimpleAgent",
           domain="simpleagent@rk",
           features=[rk_features.Metric, rk_features.Performance, rk_features.Debug])  # port domain not required
 class SimpleAgent:
