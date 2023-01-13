@@ -2,6 +2,7 @@ from .driver.com import MemoryDriver
 from .rakun import *
 from .features import *
 from .plugins import *
+from .rakun_server import *
 
 __doc__ = rakun.__doc__
 if hasattr(rakun, "__all__"):

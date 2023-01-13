@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 
-use crate::handlers::events::{Event, EventHandler};
+use crate::handlers::events::{Event, EventHandler, EventType};
 
 #[pyclass]
 pub struct Agent {
@@ -21,7 +21,10 @@ impl Agent {
 
     fn add_event(&self, event_type: String, event: Event) {
         let mut event_handler = Arc::clone(&self.event_handler);
-        event_handler.add_event(event_type, event);
+        match event_handler.get_editable_event_list(EventType::from_str(&event_type)) {
+            Some(event_list) => event_list.register(event),
+            None => panic!("Invalid event type"),
+        }
     }
 }
 

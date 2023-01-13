@@ -52,10 +52,12 @@ class SimpleAgent:
 
 
 async def main():
-    await rk.register(SimpleAgent, domain="simpleagent@rk",
-                      features=[rk.features.Metric, rk.features.Performance,
-                                rk.features.Debug])  # Here you can override them
-    await rk.start(driver=MemoryDriver)
+    rakun = rk.Rakun()
+
+    await rakun.register(SimpleAgent, domain="simpleagent@rk",
+                         features=[rk.features.Metric, rk.features.Performance,
+                                   rk.features.Debug])  # Here you can override them
+    await rakun.start(driver=MemoryDriver)
 
 
 if __name__ == '__main__':
