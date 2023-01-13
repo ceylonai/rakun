@@ -12,6 +12,7 @@ pub enum EventInner {
 }
 
 #[derive(Clone)]
+#[pyclass]
 pub struct EventType(EventInner);
 
 impl EventType {
@@ -39,7 +40,7 @@ impl EventType {
 
 impl EventType {
     const BEFORE_START: EventType = EventType(EventInner::BeforeStart);
-    const AFTER_START: EventType = EventType(EventInner::AfterStart);
+    pub(crate) const AFTER_START: EventType = EventType(EventInner::AfterStart);
     const BEFORE_STOP: EventType = EventType(EventInner::BeforeStop);
     const AFTER_STOP: EventType = EventType(EventInner::AfterStop);
     const MESSAGE: EventType = EventType(EventInner::Message);
@@ -91,8 +92,26 @@ impl EventHandler {
     }
 
     pub fn get_editable_event_list(&self, event_type: EventType) -> Option<&EventMap> {
-        match event_type {
-            _ => self.events.get(event_type.as_str()),
+        self.events.get(event_type.as_str())
+    }
+
+    pub fn emit(&self, event_type: EventType, data: Option<Py<PyAny>>) {
+        let event_list = self.get_editable_event_list(event_type.clone());
+        match event_list {
+            Some(event_list) => {
+                let event_list = event_list.get_event_list();
+                for event in event_list {
+                    let _data = data.clone();
+                    if Python::with_gil(|py| {
+                        let method = event.method.as_ref(py);
+                        let rep = method.call1((_data, )).unwrap();
+                        pyo3_asyncio::async_std::into_future(rep)
+                    }).is_ok() {}
+                }
+            }
+            None => {
+                println!("No event found for event type: {}", event_type.as_str());
+            }
         }
     }
 }

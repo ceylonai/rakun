@@ -2,11 +2,28 @@ from .driver.com import MemoryDriver
 from .rakun import *
 from .features import *
 from .plugins import *
-from .rakun_server import *
+from .agent import AgentWrapper
 
 __doc__ = rakun.__doc__
 if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
+
+
+class Rakun:
+    agents = {}
+
+    async def register(self, agent_impl, domain=None, features=None):
+        """
+        Register agent
+        :param agent_impl:
+        :param domain: domain of the agent
+        :param features: list of features
+        :return: agent class
+        """
+        self.agents[domain] = AgentWrapper(agent_impl, domain, features)
+
+    async def start(self, driver=MemoryDriver):
+        pass
 
 
 def agent(domain=None, name=None, features=None):
@@ -28,7 +45,7 @@ def agent(domain=None, name=None, features=None):
     return decorator
 
 
-def behave(name):
+def event(name):
     """
     Decorator for agent class
     :param name: name of the agent
@@ -45,7 +62,8 @@ def behave(name):
 def process(sender, subject=None):
     """
     Decorator for agent class
-    :param name: name of the agent
+    :param sender:
+    :param subject:
     :return: agent class
     """
 
