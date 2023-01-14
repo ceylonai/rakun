@@ -45,15 +45,16 @@ def agent(domain=None, name=None, features=None):
     return decorator
 
 
-def event(name):
+def event(event_type):
     """
     Decorator for agent class
-    :param name: name of the agent
+    :param event_type: type of the registered event
     :return: agent class
     """
 
     def decorator(func):
-        func.__name__ = name
+        # func = Event(func, event_type)
+        func.event_type = event_type
         return func
 
     return decorator

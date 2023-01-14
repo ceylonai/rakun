@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use pyo3::prelude::*;
 use pyo3::types::PyString;
@@ -7,17 +7,19 @@ use crate::handlers::events::{Event, EventHandler, EventType};
 
 #[pyclass(subclass)]
 pub struct Agent {
-    pub base_class: Py<PyAny>,
+    #[pyo3(get)]
+    pub base_class: PyObject,
     pub event_handler: Arc<EventHandler>,
-    pub fetchers: Vec<Py<PyAny>>,
-    #[pyo3(get, set)]
+    #[pyo3(get)]
+    pub features: Vec<Py<PyAny>>,
+    #[pyo3(get)]
     pub domain: String,
 }
 
 #[pymethods]
 impl Agent {
     #[new]
-    fn new(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>, features: Option<Vec<Py<PyAny>>>) -> Self {
+    fn __new__(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>, features: Option<Vec<Py<PyAny>>>) -> Self {
         let domain_name = match domain_name {
             Some(domain_name) => domain_name.to_string(),
             None => {
@@ -36,18 +38,25 @@ impl Agent {
                 })
             }
         };
-        let agent = Agent {
+
+        let base_class = Python::with_gil(|py| {
+            let base_class = base_class.as_ref(py);
+            let base_class = base_class.call0().unwrap();
+            base_class.to_object(py)
+        });
+
+        Agent {
             base_class,
             event_handler: Arc::new(EventHandler::new()),
-            fetchers: features,
+            features,
             domain: domain_name,
-        };
-        agent.__created__();
-        agent
+        }
     }
 
-    fn __created__(&self) {}
 
+    /**
+     * Emit events
+     */
     fn emit(&self, event_type: EventType, data: Option<Py<PyAny>>) {
         let event_handler = Arc::clone(&self.event_handler);
         event_handler.emit(event_type, data);
@@ -57,7 +66,7 @@ impl Agent {
         let event_handler = Arc::clone(&self.event_handler);
         match event_handler.get_editable_event_list(EventType::from_str(&event_type)) {
             Some(event_list) => event_list.register(event),
-            None => panic!("Invalid event type"),
+            None => panic!("Invalid event type {}", event_type),
         }
     }
 }

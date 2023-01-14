@@ -5,34 +5,34 @@ from rakun.driver.com import MemoryDriver
 
 
 @rk.agent(name="SimpleAgent",
-          domain="simpleagent@rk",
+          domain="simpleagent2@rk",
           features=[rk_features.Metric, rk_features.Performance, rk_features.Debug])  # port domain not required
 class SimpleAgent2:
     pass
 
 
 @rk.agent(name="SimpleAgent",
-          domain="simpleagent@rk",
+          domain="simpleagent1@rk",
           features=[rk_features.Metric, rk_features.Performance, rk_features.Debug])  # port domain not required
 class SimpleAgent:
     def __init__(self):
         print("SimpleAgent init")
 
-    @rk.event("before_start")
-    async def __before_start__(self):
-        pass
+    @rk.event("before_agent_start")
+    async def __before_agent_start__(self):
+        print("SimpleAgent before_agent_start")
 
-    @rk.event("after_start")
-    async def __after_start__(self):
-        pass
+    @rk.event("after_agent_start")
+    async def __after_agent_start__(self):
+        print("SimpleAgent after_agent_start")
 
-    @rk.event("before_finish")
-    async def __after_start__(self):
-        pass
+    @rk.event("before_agent_stop")
+    async def __before_agent_finish__(self):
+        print("SimpleAgent before_agent_stop")
 
-    @rk.event("after_finish")
-    async def __after_start__(self):
-        pass
+    @rk.event("after_agent_stop")
+    async def __after_agent_stop__(self):
+        print("SimpleAgent after_agent_stop")
 
     @rk.event("forever")  # forever, periodic, on_event, on_message, on_start, on_stop
     async def run(self):

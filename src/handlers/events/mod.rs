@@ -2,13 +2,19 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use pyo3::prelude::*;
 
+// forever, periodic, on_event, on_message, on_start, on_stop
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum EventInner {
-    BeforeStart,
-    AfterStart,
-    BeforeStop,
-    AfterStop,
+    BeforeAgentStart,
+    AfterAgentStart,
+    BeforeAgentStop,
+    AfterAgentStop,
     Message,
+    OnStart,
+    OnStop,
+    OnEvent,
+    Forever,
+    Periodic,
 }
 
 #[derive(Clone)]
@@ -18,32 +24,51 @@ pub struct EventType(EventInner);
 impl EventType {
     pub fn from_str(event_type: &String) -> Self {
         match event_type.as_str() {
-            "before_start" => EventType(EventInner::BeforeStart),
-            "after_start" => EventType(EventInner::AfterStart),
-            "before_stop" => EventType(EventInner::BeforeStop),
-            "after_stop" => EventType(EventInner::AfterStop),
+            "before_agent_start" => EventType(EventInner::BeforeAgentStart),
+            "after_agent_start" => EventType(EventInner::AfterAgentStart),
+            "before_agent_stop" => EventType(EventInner::BeforeAgentStop),
+            "after_agent_stop" => EventType(EventInner::AfterAgentStop),
             "message" => EventType(EventInner::Message),
-            _ => panic!("Invalid event type"),
+            "on_start" => EventType(EventInner::OnStart),
+            "on_stop" => EventType(EventInner::OnStop),
+            "on_event" => EventType(EventInner::OnEvent),
+            "forever" => EventType(EventInner::Forever),
+            "periodic" => EventType(EventInner::Periodic),
+            _ => panic!("Invalid event type {}", event_type),
         }
     }
 
     pub fn as_str(&self) -> &str {
         match self.0 {
-            EventInner::BeforeStart => "before_start",
-            EventInner::AfterStart => "after_start",
-            EventInner::BeforeStop => "before_stop",
-            EventInner::AfterStop => "after_stop",
+            EventInner::BeforeAgentStart => "before_agent_start",
+            EventInner::AfterAgentStart => "after_agent_start",
+            EventInner::BeforeAgentStop => "before_agent_stop",
+            EventInner::AfterAgentStop => "after_agent_stop",
             EventInner::Message => "message",
+            EventInner::OnStart => "on_start",
+            EventInner::OnStop => "on_stop",
+            EventInner::OnEvent => "on_event",
+            EventInner::Forever => "forever",
+            EventInner::Periodic => "periodic",
         }
+    }
+
+    pub fn as_string(&self) -> String {
+        String::from(self.as_str())
     }
 }
 
 impl EventType {
-    const BEFORE_START: EventType = EventType(EventInner::BeforeStart);
-    pub(crate) const AFTER_START: EventType = EventType(EventInner::AfterStart);
-    const BEFORE_STOP: EventType = EventType(EventInner::BeforeStop);
-    const AFTER_STOP: EventType = EventType(EventInner::AfterStop);
+    const BEFORE_AGENT_START: EventType = EventType(EventInner::BeforeAgentStart);
+    const AFTER_AGENT_START: EventType = EventType(EventInner::AfterAgentStart);
+    const BEFORE_AGENT_STOP: EventType = EventType(EventInner::BeforeAgentStop);
+    const AFTER_AGENT_STOP: EventType = EventType(EventInner::AfterAgentStop);
     const MESSAGE: EventType = EventType(EventInner::Message);
+    const ON_START: EventType = EventType(EventInner::OnStart);
+    const ON_STOP: EventType = EventType(EventInner::OnStop);
+    const ON_EVENT: EventType = EventType(EventInner::OnEvent);
+    const FOREVER: EventType = EventType(EventInner::Forever);
+    const PERIODIC: EventType = EventType(EventInner::Periodic);
 }
 
 #[derive(Clone)]
@@ -86,9 +111,18 @@ pub struct EventHandler {
 
 impl EventHandler {
     pub fn new() -> Self {
-        EventHandler {
-            events: HashMap::new(),
-        }
+        let mut events = HashMap::new();
+        events.insert(EventType::BEFORE_AGENT_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::AFTER_AGENT_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::BEFORE_AGENT_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::AFTER_AGENT_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::MESSAGE.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::ON_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::ON_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::ON_EVENT.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::FOREVER.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        events.insert(EventType::PERIODIC.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
+        Self { events }
     }
 
     pub fn get_editable_event_list(&self, event_type: EventType) -> Option<&EventMap> {
