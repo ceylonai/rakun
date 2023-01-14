@@ -9,6 +9,24 @@ if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
 
 
+async def agent_a(*args, **kwargs):
+    print("agent_a")
+
+
+def get_events(cls):
+    events = {}
+    for name, method in cls.__dict__.items():
+        if callable(method) and hasattr(method, "event_type"):
+            event_type = method.event_type
+            print("event_type", event_type, method)
+            event = Event(event_type, agent_a)
+            if event_type in events:
+                events[event_type].append(event)
+            else:
+                events[event_type] = [event]
+    return events
+
+
 class Rakun:
     agents = {}
 
@@ -20,7 +38,7 @@ class Rakun:
         :param features: list of features
         :return: agent class
         """
-        self.agents[domain] = AgentWrapper(agent_impl, domain, features)
+        self.agents[domain] = AgentWrapper(agent_impl, domain, features, get_events(agent_impl))
 
     async def start(self, driver=MemoryDriver):
         pass

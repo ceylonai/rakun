@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use pyo3::ffi::Py_None;
 use pyo3::prelude::*;
 
 // forever, periodic, on_event, on_message, on_start, on_stop
@@ -24,13 +25,9 @@ pub struct EventType(EventInner);
 impl EventType {
     pub fn from_str(event_type: &String) -> Self {
         match event_type.as_str() {
-            "before_agent_start" => EventType(EventInner::BeforeAgentStart),
             "after_agent_start" => EventType(EventInner::AfterAgentStart),
             "before_agent_stop" => EventType(EventInner::BeforeAgentStop),
-            "after_agent_stop" => EventType(EventInner::AfterAgentStop),
             "message" => EventType(EventInner::Message),
-            "on_start" => EventType(EventInner::OnStart),
-            "on_stop" => EventType(EventInner::OnStop),
             "on_event" => EventType(EventInner::OnEvent),
             "forever" => EventType(EventInner::Forever),
             "periodic" => EventType(EventInner::Periodic),
@@ -59,16 +56,12 @@ impl EventType {
 }
 
 impl EventType {
-    const BEFORE_AGENT_START: EventType = EventType(EventInner::BeforeAgentStart);
-    const AFTER_AGENT_START: EventType = EventType(EventInner::AfterAgentStart);
-    const BEFORE_AGENT_STOP: EventType = EventType(EventInner::BeforeAgentStop);
-    const AFTER_AGENT_STOP: EventType = EventType(EventInner::AfterAgentStop);
-    const MESSAGE: EventType = EventType(EventInner::Message);
-    const ON_START: EventType = EventType(EventInner::OnStart);
-    const ON_STOP: EventType = EventType(EventInner::OnStop);
-    const ON_EVENT: EventType = EventType(EventInner::OnEvent);
-    const FOREVER: EventType = EventType(EventInner::Forever);
-    const PERIODIC: EventType = EventType(EventInner::Periodic);
+    pub const AFTER_AGENT_START: EventType = EventType(EventInner::AfterAgentStart);
+    pub const BEFORE_AGENT_STOP: EventType = EventType(EventInner::BeforeAgentStop);
+    pub const MESSAGE: EventType = EventType(EventInner::Message);
+    pub const ON_EVENT: EventType = EventType(EventInner::OnEvent);
+    pub const FOREVER: EventType = EventType(EventInner::Forever);
+    pub const PERIODIC: EventType = EventType(EventInner::Periodic);
 }
 
 #[derive(Clone)]
@@ -85,6 +78,17 @@ impl Event {
     #[new]
     pub fn new(event_type: String, method: Py<PyAny>) -> Self {
         Event { event_type, method, filter: None }
+    }
+
+    pub fn action<'a>(&'a self, py: Python<'a>, args: Option<Py<PyAny>>) -> PyResult<&'a PyAny> {
+        println!("Event action {:?} {:?} {:?}", self.event_type, self.method.to_string(), self.filter);
+        let method = self.method.as_ref(py);
+        let meth = method.call1((args, )).unwrap();
+        let meth = pyo3_asyncio::async_std::into_future(meth).unwrap();
+        pyo3_asyncio::async_std::future_into_py(py, async move {
+            println!("Event action future");
+            meth.await
+        })
     }
 }
 
@@ -112,13 +116,9 @@ pub struct EventHandler {
 impl EventHandler {
     pub fn new() -> Self {
         let mut events = HashMap::new();
-        events.insert(EventType::BEFORE_AGENT_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::AFTER_AGENT_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::BEFORE_AGENT_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
-        events.insert(EventType::AFTER_AGENT_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::MESSAGE.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
-        events.insert(EventType::ON_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
-        events.insert(EventType::ON_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::ON_EVENT.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::FOREVER.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::PERIODIC.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
@@ -136,11 +136,9 @@ impl EventHandler {
                 let event_list = event_list.get_event_list();
                 for event in event_list {
                     let _data = data.clone();
-                    if Python::with_gil(|py| {
-                        let method = event.method.as_ref(py);
-                        let rep = method.call1((_data, )).unwrap();
-                        pyo3_asyncio::async_std::into_future(rep)
-                    }).is_ok() {}
+                    Python::with_gil(|py| {
+                        event.action(py, _data).unwrap();
+                    });
                 }
             }
             None => {

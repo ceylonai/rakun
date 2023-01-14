@@ -18,21 +18,13 @@ class SimpleAgent:
     def __init__(self):
         print("SimpleAgent init")
 
-    @rk.event("before_agent_start")
-    async def __before_agent_start__(self):
-        print("SimpleAgent before_agent_start")
-
     @rk.event("after_agent_start")
-    async def __after_agent_start__(self):
+    async def after_agent_start(self):
         print("SimpleAgent after_agent_start")
 
     @rk.event("before_agent_stop")
     async def __before_agent_finish__(self):
         print("SimpleAgent before_agent_stop")
-
-    @rk.event("after_agent_stop")
-    async def __after_agent_stop__(self):
-        print("SimpleAgent after_agent_stop")
 
     @rk.event("forever")  # forever, periodic, on_event, on_message, on_start, on_stop
     async def run(self):

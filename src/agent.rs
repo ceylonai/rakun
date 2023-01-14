@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use pyo3::prelude::*;
-use pyo3::types::PyString;
+use pyo3::PyClass;
+use pyo3::types::{PyDict, PyDictItems, PyString};
 
 use crate::handlers::events::{Event, EventHandler, EventType};
 
@@ -19,7 +21,7 @@ pub struct Agent {
 #[pymethods]
 impl Agent {
     #[new]
-    fn __new__(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>, features: Option<Vec<Py<PyAny>>>) -> Self {
+    fn __new__(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>, features: Option<Vec<Py<PyAny>>>, events: Option<HashMap<String, Vec<Event>>>) -> Self {
         let domain_name = match domain_name {
             Some(domain_name) => domain_name.to_string(),
             None => {
@@ -45,12 +47,23 @@ impl Agent {
             base_class.to_object(py)
         });
 
-        Agent {
+        let event_handler = EventHandler::new();
+        if let Some(events) = events {
+            for (event_type, handlers) in events {
+                for handler in handlers {
+                    event_handler.get_editable_event_list(EventType::from_str(&event_type))
+                        .unwrap().register( handler);
+                }
+            }
+        }
+        let agent = Agent {
             base_class,
-            event_handler: Arc::new(EventHandler::new()),
+            event_handler: Arc::new(event_handler),
             features,
             domain: domain_name,
-        }
+        };
+        agent.emit(EventType::AFTER_AGENT_START, None);
+        agent
     }
 
 
