@@ -64,7 +64,7 @@ class Rakun:
         :param features: list of features
         :return: agent class
         """
-        loop = initialize_event_loop()
+        initialize_event_loop()
         self.agents[domain] = AgentWrapper(agent_impl, domain, features, get_events(agent_impl))
 
     async def start(self, driver=MemoryDriver("memory")):
