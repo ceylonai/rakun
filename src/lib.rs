@@ -1,6 +1,7 @@
 mod agent;
 mod handlers;
 mod drivers;
+mod executors;
 
 use agent::Agent;
 use pyo3::prelude::*;

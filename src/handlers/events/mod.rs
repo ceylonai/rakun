@@ -3,6 +3,7 @@ use std::sync::{RwLock};
 
 use log::info;
 use pyo3::prelude::*;
+use crate::executors::execute_method;
 
 // forever, periodic, on_event, on_message, on_start, on_stop
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -75,33 +76,7 @@ impl Event {
 
     pub fn action<'a>(&'a self, py: Python<'a>, args: Option<Py<PyAny>>) -> PyResult<&'a PyAny> {
         info!("Event action {:?} {:?} {:?}", self.event_type, self.method.to_string(), self.filter);
-        let method = self.method.as_ref(py);
-        let meth = method.call1((args, )).unwrap();
-        let meth = pyo3_asyncio::async_std::into_future(meth);
-        pyo3_asyncio::async_std::future_into_py(py, async move {
-            info!("Event action future");
-            match meth {
-                Ok(meth) => {
-                    info!("Event action future meth");
-                    let meth = meth.await;
-                    info!("Event action future meth {:?}", meth);
-                    match meth {
-                        Ok(meth) => {
-                            info!("Event action future meth ok {:?}", meth);
-                            Ok(meth)
-                        }
-                        Err(e) => {
-                            info!("Event action future meth err {:?}", e);
-                            Err(e)
-                        }
-                    }
-                }
-                Err(e) => {
-                    info!("Event action future err {:?}", e);
-                    Err(e)
-                }
-            }
-        })
+        execute_method(self.method.clone_ref(py), py, args)
     }
 }
 
@@ -126,8 +101,8 @@ pub struct EventHandler {
     events: HashMap<String, EventMap>,
 }
 
-impl EventHandler {
-    pub fn new() -> Self {
+impl Default for EventHandler {
+    fn default() -> Self {
         let mut events = HashMap::new();
         events.insert(EventType::AFTER_AGENT_START.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::BEFORE_AGENT_STOP.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
@@ -136,6 +111,12 @@ impl EventHandler {
         events.insert(EventType::FOREVER.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         events.insert(EventType::PERIODIC.as_string(), EventMap { event_map: RwLock::new(Vec::new()) });
         Self { events }
+    }
+}
+
+impl EventHandler {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn get_editable_event_list(&self, event_type: EventType) -> Option<&EventMap> {

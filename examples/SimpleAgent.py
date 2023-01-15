@@ -1,7 +1,18 @@
 import asyncio
+import logging
+
 import rakun as rk
 from rakun import features as rk_features
 from rakun.driver.com import MemoryDriver
+
+logger = logging.getLogger(__name__)
+log_level = "WARN"
+
+# if self.dev:
+#     log_level = "DEBUG"
+
+log_level = "DEBUG"  # self.log_level if self.log_level else log_level
+logging.basicConfig(level=log_level)
 
 
 @rk.agent(name="SimpleAgent",

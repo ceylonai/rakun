@@ -12,15 +12,6 @@ __doc__ = rakun.__doc__
 if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
 
-logger = logging.getLogger(__name__)
-log_level = "WARN"
-
-# if self.dev:
-#     log_level = "DEBUG"
-
-log_level = "DEBUG"  # self.log_level if self.log_level else log_level
-logging.basicConfig(level=log_level)
-
 
 def initialize_event_loop():
     # platform_name = platform.machine()
