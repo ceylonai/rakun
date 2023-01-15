@@ -67,7 +67,8 @@ class Rakun:
         initialize_event_loop()
         self.agents[domain] = AgentWrapper(agent_impl, domain, features, get_events(agent_impl))
 
-    async def start(self, driver=MemoryDriver("memory")):
+    async def start(self, driver=MemoryDriver):
+        driver = driver()
         for agent in self.agents.values():
             await agent.start(driver)
 

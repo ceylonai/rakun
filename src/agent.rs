@@ -3,8 +3,7 @@ use std::sync::{Arc, Mutex};
 use log::info;
 
 use pyo3::prelude::*;
-use pyo3::PyClass;
-use pyo3::types::{PyDict, PyDictItems, PyString};
+use pyo3::types::{PyDictItems, PyString};
 use crate::drivers::Driver;
 
 use crate::handlers::events::{Event, EventHandler, EventType};
@@ -23,7 +22,9 @@ pub struct Agent {
 #[pymethods]
 impl Agent {
     #[new]
-    fn __new__(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>, features: Option<Vec<Py<PyAny>>>, events: Option<HashMap<String, Vec<Event>>>) -> Self {
+    fn __new__(base_class: Py<PyAny>, domain_name: Option<Py<PyString>>,
+               features: Option<Vec<Py<PyAny>>>,
+               events: Option<HashMap<String, Vec<Event>>>) -> Self {
         let domain_name = match domain_name {
             Some(domain_name) => domain_name.to_string(),
             None => {
@@ -66,7 +67,7 @@ impl Agent {
         }
     }
 
-    fn start<'a>(&'a self, py: Python<'a>, driver: Py<PyAny>) -> PyResult<&'a PyAny> {
+    fn start<'a>(&'a self, py: Python<'a>, driver: Option<Driver>) -> PyResult<&'a PyAny> {
         Python::with_gil(|py| {
             let asyncio = py.import("asyncio").unwrap();
 

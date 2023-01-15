@@ -1,19 +1,15 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{RwLock};
+
 use log::info;
-use pyo3::ffi::Py_None;
 use pyo3::prelude::*;
 
 // forever, periodic, on_event, on_message, on_start, on_stop
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum EventInner {
-    BeforeAgentStart,
     AfterAgentStart,
     BeforeAgentStop,
-    AfterAgentStop,
     Message,
-    OnStart,
-    OnStop,
     OnEvent,
     Forever,
     Periodic,
@@ -38,13 +34,9 @@ impl EventType {
 
     pub fn as_str(&self) -> &str {
         match self.0 {
-            EventInner::BeforeAgentStart => "before_agent_start",
             EventInner::AfterAgentStart => "after_agent_start",
             EventInner::BeforeAgentStop => "before_agent_stop",
-            EventInner::AfterAgentStop => "after_agent_stop",
             EventInner::Message => "message",
-            EventInner::OnStart => "on_start",
-            EventInner::OnStop => "on_stop",
             EventInner::OnEvent => "on_event",
             EventInner::Forever => "forever",
             EventInner::Periodic => "periodic",

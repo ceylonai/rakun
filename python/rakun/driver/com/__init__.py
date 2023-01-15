@@ -2,4 +2,6 @@ import rakun
 
 
 class MemoryDriver(rakun.Driver):
-    name = "memory"
+
+    def __new__(cls):
+        return super().__new__(cls, name="MemoryDriver")
