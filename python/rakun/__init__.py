@@ -1,16 +1,42 @@
-from .driver.com import MemoryDriver
+import asyncio
+import logging
+import sys
+
 from .rakun import *
 from .features import *
 from .plugins import *
 from .agent import AgentWrapper
+from .driver.com import MemoryDriver
 
 __doc__ = rakun.__doc__
 if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
 
+logger = logging.getLogger(__name__)
+log_level = "WARN"
 
-async def agent_a(*args, **kwargs):
-    print("agent_a")
+# if self.dev:
+#     log_level = "DEBUG"
+
+log_level = "DEBUG"  # self.log_level if self.log_level else log_level
+logging.basicConfig(level=log_level)
+
+
+def initialize_event_loop():
+    # platform_name = platform.machine()
+    if sys.platform.startswith("win32") or sys.platform.startswith("linux-cross"):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+    else:
+        # uv loop doesn't support windows or arm machines at the moment
+        # but uv loop is much faster than native asyncio
+        import uvloop
+
+        uvloop.install()
+        loop = uvloop.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
 
 
 def get_events(cls):
@@ -19,7 +45,7 @@ def get_events(cls):
         if callable(method) and hasattr(method, "event_type"):
             event_type = method.event_type
             print("event_type", event_type, method)
-            event = Event(event_type, agent_a)
+            event = Event(event_type, method)
             if event_type in events:
                 events[event_type].append(event)
             else:
@@ -38,10 +64,12 @@ class Rakun:
         :param features: list of features
         :return: agent class
         """
+        loop = initialize_event_loop()
         self.agents[domain] = AgentWrapper(agent_impl, domain, features, get_events(agent_impl))
 
-    async def start(self, driver=MemoryDriver):
-        pass
+    async def start(self, driver=MemoryDriver("memory")):
+        for agent in self.agents.values():
+            await agent.start(driver)
 
 
 def agent(domain=None, name=None, features=None):

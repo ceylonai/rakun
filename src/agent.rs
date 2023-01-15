@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use log::info;
 
 use pyo3::prelude::*;
 use pyo3::PyClass;
 use pyo3::types::{PyDict, PyDictItems, PyString};
+use crate::drivers::Driver;
 
 use crate::handlers::events::{Event, EventHandler, EventType};
 
@@ -52,18 +54,34 @@ impl Agent {
             for (event_type, handlers) in events {
                 for handler in handlers {
                     event_handler.get_editable_event_list(EventType::from_str(&event_type))
-                        .unwrap().register( handler);
+                        .unwrap().register(handler);
                 }
             }
         }
-        let agent = Agent {
+        Agent {
             base_class,
             event_handler: Arc::new(event_handler),
             features,
             domain: domain_name,
-        };
-        agent.emit(EventType::AFTER_AGENT_START, None);
-        agent
+        }
+    }
+
+    fn start<'a>(&'a self, py: Python<'a>, driver: Py<PyAny>) -> PyResult<&'a PyAny> {
+        Python::with_gil(|py| {
+            let asyncio = py.import("asyncio").unwrap();
+
+            let event_loop = asyncio.call_method0("new_event_loop").unwrap();
+            asyncio
+                .call_method1("set_event_loop", (event_loop, ))
+                .unwrap();
+            self.emit(EventType::AFTER_AGENT_START, None);
+
+            info!("Starting agent with driver");
+        });
+
+        pyo3_asyncio::async_std::future_into_py(py, async move {
+            Ok(Python::with_gil(|py| "ok".to_object(py)))
+        })
     }
 
 

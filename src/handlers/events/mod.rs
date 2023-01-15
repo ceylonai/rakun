@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use log::info;
 use pyo3::ffi::Py_None;
 use pyo3::prelude::*;
 
@@ -81,13 +82,33 @@ impl Event {
     }
 
     pub fn action<'a>(&'a self, py: Python<'a>, args: Option<Py<PyAny>>) -> PyResult<&'a PyAny> {
-        println!("Event action {:?} {:?} {:?}", self.event_type, self.method.to_string(), self.filter);
+        info!("Event action {:?} {:?} {:?}", self.event_type, self.method.to_string(), self.filter);
         let method = self.method.as_ref(py);
         let meth = method.call1((args, )).unwrap();
-        let meth = pyo3_asyncio::async_std::into_future(meth).unwrap();
+        let meth = pyo3_asyncio::async_std::into_future(meth);
         pyo3_asyncio::async_std::future_into_py(py, async move {
-            println!("Event action future");
-            meth.await
+            info!("Event action future");
+            match meth {
+                Ok(meth) => {
+                    info!("Event action future meth");
+                    let meth = meth.await;
+                    info!("Event action future meth {:?}", meth);
+                    match meth {
+                        Ok(meth) => {
+                            info!("Event action future meth ok {:?}", meth);
+                            Ok(meth)
+                        }
+                        Err(e) => {
+                            info!("Event action future meth err {:?}", e);
+                            Err(e)
+                        }
+                    }
+                }
+                Err(e) => {
+                    info!("Event action future err {:?}", e);
+                    Err(e)
+                }
+            }
         })
     }
 }
@@ -142,7 +163,7 @@ impl EventHandler {
                 }
             }
             None => {
-                println!("No event found for event type: {}", event_type.as_str());
+                info!("No event found for event type: {}", event_type.as_str());
             }
         }
     }
