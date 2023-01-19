@@ -3,9 +3,12 @@ import logging
 import sys
 
 from .rakun import *
+
 __doc__ = rakun.__doc__
 if hasattr(rakun, "__all__"):
     __all__ = rakun.__all__
+
+logger = logging.getLogger(__name__)
 
 
 def initialize_event_loop():
@@ -24,3 +27,9 @@ def initialize_event_loop():
         asyncio.set_event_loop(loop)
         return loop
 
+
+class Rakun:
+
+    async def register(self, agent_class):
+        agent = agent_class()
+        logger.debug(f"Registering agent {agent}")
