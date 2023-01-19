@@ -75,7 +75,7 @@ impl Agent {
             asyncio
                 .call_method1("set_event_loop", (event_loop, ))
                 .unwrap();
-            self.emit(EventType::AFTER_AGENT_START, None);
+            self.emit(EventType::FOREVER, None);
 
             info!("Starting agent with driver");
         });

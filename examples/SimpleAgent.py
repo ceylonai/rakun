@@ -39,13 +39,16 @@ class SimpleAgent:
 
     @rk.event("forever")  # forever, periodic, on_event, on_message, on_start, on_stop
     async def run(self):
-        message = rk.Message()
-        message.topic = "hello"
-        message.to = "simpleagent@rk"
-        message.body = {
-            "message": "Hello World"
-        }
-        self.core.send_message(message)
+        while True:
+            print("SimpleAgent run")
+            await asyncio.sleep(1)
+        # message = rk.Message()
+        # message.topic = "hello"
+        # message.to = "simpleagent@rk"
+        # message.body = {
+        #     "message": "Hello World"
+        # }
+        # self.core.send_message(message)
 
     @rk.process(sender="*")
     async def process(self, message, sender):  # here sender must be available
