@@ -19,7 +19,7 @@ logging.basicConfig(level=log_level, format='%(asctime)s %(message)s')
 class SimpleAgent(rk.Agent):
     def __new__(self):
         logger.debug("SimpleAgent new")
-        return super().__new__(self)
+        return super().__new__(self, domain="simpleagent1@rk")
 
     def __init__(self):
         super().__init__()
