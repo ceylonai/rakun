@@ -33,40 +33,7 @@ class SimpleAgent(rk.Agent):
     # # @rk.event("after_agent_start")
     async def after_start_async(self):
         logger.debug(f"{self} after_start_async")
-    #
-    # # @rk.event("before_agent_stop")
-    # async def __before_agent_finish__(self):
-    #     print("SimpleAgent before_agent_stop")
-    #
-    # # @rk.event("forever")  # forever, periodic, on_event, on_message, on_start, on_stop
-    # async def run(self):
-    #     while True:
-    #         print("SimpleAgent run")
-    #         await asyncio.sleep(1)
-    #     # message = rk.Message()
-    #     # message.topic = "hello"
-    #     # message.to = "simpleagent@rk"
-    #     # message.body = {
-    #     #     "message": "Hello World"
-    #     # }
-    #     # self.core.send_message(message)
-    #
-    # # @rk.process(sender="*")
-    # async def process(self, message, sender):  # here sender must be available
-    #     print(message)
-    #
-    # # @rk.process(sender="world")
-    # async def process_world_message(self, message):  # (self, message, sender): same work but no need
-    #     print(message)
-    #
-    # # @rk.process(sender="world", subject="hello")
-    # async def process_world_message(self, message):  # (self, message, sender): same work but no need
-    #     print(message)
-    #
-    # # @rk.process(sender="world", subject="*hello*")
-    # async def process_world_message(self, message):  # (self, message, sender): same work but no need
-    #     print(message)
-
+    
 
 async def main():
     rakun = rk.Rakun()
