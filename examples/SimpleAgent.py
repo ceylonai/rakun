@@ -27,7 +27,7 @@ class SimpleAgent(rk.Agent):
 
     # # @rk.event("after_agent_start")
     async def after_agent_start(self):
-        print(f"{self} after_agent_start")
+        logger.debug(f"{self} after_agent_start")
     #
     # # @rk.event("before_agent_stop")
     # async def __before_agent_finish__(self):

@@ -7,8 +7,8 @@ use crate::agent::Agent;
 #[pyfunction]
 fn start_agents(py: Python, agents: Vec<Py<Agent>>) -> PyResult<&PyAny> {
     for agent in agents {
-        let agent = agent.as_ref(py);
-        debug!("Starting agent: {:?}", agent);
+        let agent = agent.clone_ref(py).extract::<Agent>(py).unwrap();
+        agent.start(py).unwrap();
     }
     pyo3_asyncio::async_std::future_into_py(py, async move {
         debug!("Starting async");
