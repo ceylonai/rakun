@@ -1,7 +1,6 @@
 mod event;
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
 use log::{debug};
 use pyo3::{prelude::*};
 use crate::agent::event::{EventManager};
@@ -11,7 +10,7 @@ use crate::agent::event::{EventManager};
 pub struct Agent {
     #[pyo3(get)]
     pub domain: String,
-    pub event_manager: Arc<EventManager>,
+    pub event_manager: Arc<RwLock<Mutex<EventManager>>>,
 }
 
 #[pymethods]
@@ -28,7 +27,7 @@ impl Agent {
 
         Agent {
             domain,
-            event_manager: Arc::new(EventManager::new()),
+            event_manager: Arc::new(RwLock::new(Mutex::new(EventManager::default()))),
         }
     }
 
@@ -40,13 +39,8 @@ impl Agent {
 
     pub fn start<'a>(&'a self, _py: Python<'a>) -> PyResult<&'a PyAny> {
         debug!("Starting agent: {:?}", self.domain);
-        let event_manager = Arc::clone(&self.event_manager);
         pyo3_asyncio::async_std::future_into_py(_py, async move {
             debug!("Starting async");
-            Python::with_gil(|py| {
-                let event_manager = event_manager;
-                event_manager.emit(py,"on_start".to_string()).unwrap();
-            });
             Ok(Python::with_gil(|py| py.None()))
         })
     }
