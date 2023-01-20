@@ -54,6 +54,7 @@ class AgentRegistry:
 class Rakun:
 
     def __init__(self):
+        initialize_event_loop()
         self.registry = AgentRegistry()
 
     async def register(self, agent_class):

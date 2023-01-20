@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex, RwLock};
 use log::debug;
 use pyo3::{prelude::*};
 
@@ -12,16 +12,41 @@ pub struct Event {
 #[derive(Debug, Clone)]
 pub struct EventTypeHandler {
     pub name: String,
-    pub handlers: Vec<Event>,
+    pub handlers: Vec<Arc<Mutex<Event>>>,
 }
 
 impl EventTypeHandler {
-    pub fn emit(&self, py: Python, event: &String) -> PyResult<()> {
-        debug!("Emitting event from EventTypeHandler: {:?} {:?}", event,self.handlers);
-        for handler in &self.handlers {
-            handler.handler.call0(py)?;
+    pub fn emit(&self, event_type: &String) -> PyResult<()> {
+        debug!("Emitting event from EventTypeHandler: {:?} {:?}", event_type,self.handlers);
+        for event in &self.handlers {
+            let event = event.lock().unwrap();
+            let output = Python::with_gil(|py| {
+                let function_output = event.handler.as_ref(py).call0().unwrap();
+                pyo3_asyncio::async_std::into_future(function_output)
+            }).unwrap();
+
+            async_std::task::spawn(async move {
+                let output = output.await;
+                Python::with_gil(|py| {
+                    let output = output.unwrap();
+                    let output = output.as_ref(py);
+                    let output = output.to_string();
+                    debug!("Event output: {:?}", output);
+                });
+            });
+
+
+            // let _ = Python::with_gil(|py| {
+            //     event.handler.call0(py)
+            // });
         }
         Ok(())
+    }
+
+    pub fn add_handler(&self, event: Event) {
+        debug!("Adding handler to EventTypeHandler: {:?}", event);
+        let mut handlers = self.handlers.clone();
+        handlers.push(Arc::new(Mutex::new(event)));
     }
 }
 
@@ -40,27 +65,26 @@ impl EventManager {
         };
         match events.get_mut(&name) {
             Some(event_type_handler) => {
-                event_type_handler.handlers.push(event);
+                event_type_handler.add_handler(event);
             }
             None => {
-                let mut event_type_handler = EventTypeHandler {
+                let event_type_handler = EventTypeHandler {
                     name: name.clone(),
-                    handlers: Vec::new(),
+                    handlers: vec![Arc::new(Mutex::new(event))],
                 };
-                event_type_handler.handlers.push(event);
                 events.insert(name, event_type_handler);
             }
         }
         Ok(())
     }
 
-    pub fn emit(&self, py: Python, event: String) -> PyResult<()> {
+    pub fn emit(&self, event: String) -> PyResult<()> {
         debug!("Emitting event from EventManager : {:?}", event);
         let events = self.events.read().unwrap();
         let event_type_handler = events.get(&event);
         match event_type_handler {
             Some(event_type_handler) => {
-                event_type_handler.emit(py, &event)
+                event_type_handler.emit(&event)
             }
             None => {
                 debug!("No event type handler found for event: {:?}", event);

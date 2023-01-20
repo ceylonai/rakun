@@ -51,9 +51,7 @@ impl Agent {
         let event_manager = self.event_manager.clone();
         let rx = async_std::task::spawn(async move {
             let event_manager = event_manager.lock().unwrap();
-            Python::with_gil(|py| {
-                event_manager.emit(py, "after_start".to_string()).unwrap();
-            });
+            event_manager.emit("after_start".to_string()).unwrap();
         });
         pyo3_asyncio::async_std::future_into_py(_py, async move {
             rx.await;
