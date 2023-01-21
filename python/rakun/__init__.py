@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import threading
 
 from .rakun import *
 
@@ -57,12 +58,13 @@ class Rakun:
         self.loop = initialize_event_loop()
         self.registry = AgentRegistry()
 
-    async def register(self, agent_class):
+    async def register(self, agent_class, domain=None):
         agent_id = f"{self.registry.get_next_id(agent_class)}"
-        agent = agent_class(id=agent_id)
+        agent = agent_class(domain, id=agent_id)
         logger.debug(f"Registering agent {agent}")
         self.registry.register(agent_class, agent)
 
     async def start(self, driver=None):
         # await start_agents(self.registry.all)
-        await asyncio.gather(*[agent.start() for agent in self.registry.all])
+        tasks = [self.loop.create_task(agent.start()) for agent in self.registry.all]
+        await asyncio.tas

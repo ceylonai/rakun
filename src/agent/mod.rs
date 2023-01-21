@@ -64,7 +64,7 @@ impl Agent {
         let event_manager = Arc::clone(&self.event_manager);
         let rx = async_std::task::spawn(async move {
             let event_manager = event_manager.lock().unwrap();
-            match event_manager.emit("after_start".to_string()) {
+            match event_manager.emit("after_start".to_string(), None) {
                 Ok(_) => Ok(Python::with_gil(|py| py.None())),
                 Err(e) => Err(e),
             }
@@ -75,7 +75,7 @@ impl Agent {
         let rx_message_handler = async_std::task::spawn(async move {
             while let Ok(msg) = receiver.recv_async().await {
                 debug!("Message received: {:?}", msg);
-                event_manager.lock().unwrap().emit("on_message".to_string()).unwrap();
+                event_manager.lock().unwrap().emit("on_message".to_string(), Option::from(msg.data)).unwrap();
             }
         });
 
@@ -105,7 +105,26 @@ impl Agent {
                     error!("Error sending message: {:?}", e)
                 }
             }
+            drop(sender);
             Ok(Python::with_gil(|py| py.None()))
+        })
+    }
+
+    pub fn exit<'a>(&'a self, _py: Python<'a>) -> PyResult<&'a PyAny> {
+        debug!("Stopping agent: {:?}", self.domain);
+        let event_manager = Arc::clone(&self.event_manager);
+        let rx = async_std::task::spawn(async move {
+            let event_manager = event_manager.lock().unwrap();
+            match event_manager.emit("before_stop".to_string(), None) {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
+        });
+        pyo3_asyncio::async_std::future_into_py(_py, async move {
+            match rx.await {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
         })
     }
 
