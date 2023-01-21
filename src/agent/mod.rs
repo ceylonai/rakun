@@ -36,11 +36,11 @@ impl Agent {
         debug!("Registering event {:?}, {:?}",name, handler);
         let event_manager = self.event_manager.clone();
         let rx = async_std::task::spawn(async move {
-            let event_manager = event_manager.lock().unwrap();
-            event_manager.register_event_handler(name, handler)
+            let mut event_manager = event_manager.lock().unwrap();
+            event_manager.register_event_handler(name, handler);
         });
         pyo3_asyncio::async_std::future_into_py(_py, async move {
-            rx.await.expect("TODO: panic message");
+            rx.await;
             Ok(Python::with_gil(|py| py.None()))
         })
     }
@@ -51,7 +51,7 @@ impl Agent {
         let event_manager = self.event_manager.clone();
         let rx = async_std::task::spawn(async move {
             let event_manager = event_manager.lock().unwrap();
-            event_manager.emit("after_start".to_string()).unwrap();
+            event_manager.emit("after_start".to_string());
         });
         pyo3_asyncio::async_std::future_into_py(_py, async move {
             rx.await;
