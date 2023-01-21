@@ -1,8 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
-use async_std::task::JoinHandle;
 use log::debug;
 use pyo3::{prelude::*};
 
@@ -64,7 +61,7 @@ impl EventManager {
         let event_type_handler = self.events.get(&name);
         match event_type_handler {
             Some(event_type_handler) => {
-                let mut event_type_handler = event_type_handler.write().unwrap();
+                let event_type_handler = event_type_handler.write().unwrap();
                 event_type_handler.add_handler(event);
             }
             None => {

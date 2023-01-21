@@ -15,8 +15,8 @@ class SimpleAgent(rk.Agent):
     def __init__(self, *args, **kwargs):
         super().__init__()
         logger.debug("SimpleAgent init")
-        # self.register_event_handler("after_start", self.after_start)
-        self.register_event_handler("after_start", self.after_start_async)
+        self.register_event_handler("after_start", self.after_start)
+        # self.register_event_handler("after_start", self.after_start_async)
 
     def after_start(self):
         logger.debug(f"{self} after_start")

@@ -37,11 +37,16 @@ impl Agent {
         let event_manager = self.event_manager.clone();
         let rx = async_std::task::spawn(async move {
             let mut event_manager = event_manager.lock().unwrap();
-            event_manager.register_event_handler(name, handler);
+            match event_manager.register_event_handler(name, handler) {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
         });
         pyo3_asyncio::async_std::future_into_py(_py, async move {
-            rx.await;
-            Ok(Python::with_gil(|py| py.None()))
+            match rx.await {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
         })
     }
 
@@ -51,11 +56,16 @@ impl Agent {
         let event_manager = self.event_manager.clone();
         let rx = async_std::task::spawn(async move {
             let event_manager = event_manager.lock().unwrap();
-            event_manager.emit("after_start".to_string());
+            match event_manager.emit("after_start".to_string()) {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
         });
         pyo3_asyncio::async_std::future_into_py(_py, async move {
-            rx.await;
-            Ok(Python::with_gil(|py| py.None()))
+            match rx.await {
+                Ok(_) => Ok(Python::with_gil(|py| py.None())),
+                Err(e) => Err(e),
+            }
         })
     }
 
@@ -63,4 +73,3 @@ impl Agent {
         Ok(format!("Agent: {}", self.domain))
     }
 }
-
