@@ -1,17 +1,24 @@
 mod agent;
 
-use log::debug;
 use pyo3::prelude::*;
 use crate::agent::Agent;
 
 #[pyfunction]
-fn start_agents(py: Python, agents: Vec<Py<Agent>>) -> PyResult<&PyAny> {
+fn start_agents(_py: Python, agents: Vec<Py<Agent>>) -> PyResult<&PyAny> {
+    let mut jobs = Vec::new();
     for agent in agents {
-        let agent = agent.clone_ref(py).extract::<Agent>(py).unwrap();
-        agent.start(py).unwrap();
+        let rx = async_std::task::spawn(async move {
+            Python::with_gil(|py| {
+                let agent = agent.clone_ref(py).extract::<Agent>(py).unwrap();
+                agent.start(py).unwrap();
+            });
+        });
+        jobs.push(rx);
     }
-    pyo3_asyncio::async_std::future_into_py(py, async move {
-        debug!("Starting async");
+    pyo3_asyncio::async_std::future_into_py(_py, async move {
+        for job in jobs {
+            job.await;
+        }
         Ok(Python::with_gil(|py| py.None()))
     })
 }

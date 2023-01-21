@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 import rakun as rk
 
@@ -21,8 +22,7 @@ class SimpleAgent(rk.Agent):
     def after_start(self):
         logger.debug(f"{self} after_start")
         while True:
-            logger.info(f"Hello {self}")
-            asyncio.sleep(1)
+            print(f"Hello {self}")
 
     async def after_start_async(self):
         logger.debug(f"{self} after_start_async")
