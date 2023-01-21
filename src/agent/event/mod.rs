@@ -25,7 +25,15 @@ impl EventTypeHandler {
                 Python::with_gil(|py| {
                     let event = event.lock().unwrap();
                     let handler = event.handler.clone_ref(py);
-                    let _ = handler.call0(py);
+                    let async_method = handler.call0(py).unwrap();
+                    // pyo3_asyncio::async_std::future_into_py()
+                    let asyncio = py.import("asyncio").unwrap();
+                    let event_loop = asyncio.call_method0("new_event_loop").unwrap();
+                    asyncio.call_method1("set_event_loop", (event_loop, )).unwrap();
+                    let event_loop_hdl = PyObject::from(event_loop);
+                    // let agent = agent.as_ref().as_ref(py);
+                    // let method_run = agent.call_method1("receiver", (message.sender.clone(), message.get_py_message(py), )).unwrap();
+                    event_loop_hdl.as_ref(py).call_method1("run_until_complete", (async_method, )).unwrap();
                 });
             });
             jobs.push(job);

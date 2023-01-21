@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+import time
 
 import rakun as rk
 
@@ -16,24 +17,25 @@ class SimpleAgent(rk.Agent):
     def __init__(self, *args, **kwargs):
         super().__init__()
         logger.debug("SimpleAgent init")
-        self.register_event_handler("after_start", self.after_start)
-        # self.register_event_handler("after_start", self.after_start_async)
-
-    def after_start(self):
-        logger.debug(f"{self} after_start")
-        while True:
-            print(f"Hello {self}")
+        # self.register_event_handler("after_start", self.after_start)
+        self.register_event_handler("after_start", self.after_start_async)
+        self.register_event_handler("on_message", self.on_message)
 
     async def after_start_async(self):
         logger.debug(f"{self} after_start_async")
+        while True:
+            await self.send({"data": "hello"})
+            await asyncio.sleep(0.1)
+
+    async def on_message(self):
+        print(f"on_message {self}")
 
 
 async def main():
     rakun = rk.Rakun()
 
-    await rakun.register(SimpleAgent)  # Here you can override them
-    await rakun.register(SimpleAgent)  # Here you can override them
-    await rakun.register(SimpleAgent)  # Here you can override them
+    # for i in range(50000):
+    await asyncio.gather(*[rakun.register(SimpleAgent) for i in range(2)])
     await rakun.start()
 
 

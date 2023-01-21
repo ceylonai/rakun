@@ -54,7 +54,7 @@ class AgentRegistry:
 class Rakun:
 
     def __init__(self):
-        initialize_event_loop()
+        self.loop = initialize_event_loop()
         self.registry = AgentRegistry()
 
     async def register(self, agent_class):
@@ -64,4 +64,5 @@ class Rakun:
         self.registry.register(agent_class, agent)
 
     async def start(self, driver=None):
-        await start_agents(self.registry.all)
+        # await start_agents(self.registry.all)
+        await asyncio.gather(*[agent.start() for agent in self.registry.all])
