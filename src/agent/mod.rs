@@ -1,9 +1,11 @@
 mod event;
 mod message;
+mod driver;
 
 use std::sync::{Arc, Mutex};
 use log::{debug, error};
 use pyo3::{prelude::*};
+use crate::agent::driver::Driver;
 use crate::agent::event::{EventManager};
 use crate::agent::message::Message;
 
@@ -14,8 +16,7 @@ pub struct Agent {
     #[pyo3(get)]
     pub domain: String,
     pub event_manager: Arc<Mutex<EventManager>>,
-    sender: Arc<flume::Sender<Message>>,
-    receiver: Arc<flume::Receiver<Message>>,
+    pub driver: Arc<Driver>,
 }
 
 #[pymethods]
@@ -23,20 +24,15 @@ impl Agent {
     #[new]
     fn new(_py: Python<'_>, domain: String, id: Option<String>) -> Self {
         debug!("Initializing Agent");
-
-        let (tx, rx) = flume::bounded(100);
-
         // Create domain with Id fo there is one
         let domain = match id {
             Some(id) => format!("{}:{}", domain, id),
             None => domain,
         };
-
         Agent {
             domain,
             event_manager: Arc::new(Mutex::new(EventManager::default())),
-            sender: Arc::new(tx),
-            receiver: Arc::new(rx),
+            driver: Arc::new(Driver::new()),
         }
     }
 
@@ -71,9 +67,9 @@ impl Agent {
         });
 
         let event_manager = Arc::clone(&self.event_manager);
-        let receiver = Arc::clone(&self.receiver);
+        let driver = Arc::clone(&self.driver);
         let rx_message_handler = async_std::task::spawn(async move {
-            while let Ok(msg) = receiver.recv_async().await {
+            while let Ok(msg) = driver.recv().await {
                 debug!("Message received: {:?}", msg);
                 event_manager.lock().unwrap().emit("on_message".to_string(), Option::from(msg.data)).unwrap();
             }
@@ -90,14 +86,14 @@ impl Agent {
     }
 
     pub fn send<'a>(&'a self, _py: Python<'a>, data: Py<PyAny>) -> PyResult<&'a PyAny> {
-        let sender = Arc::clone(&self.sender);
+        let driver = Arc::clone(&self.driver);
         pyo3_asyncio::async_std::future_into_py(_py, async move {
             let id = uuid::Uuid::new_v4().to_string();
             let message = Message {
                 id: id.clone(),
                 data,
             };
-            match sender.send_async(message).await {
+            match driver.send(message).await {
                 Ok(_) => {
                     debug!("Message:{} sent successfully", id.clone())
                 }
@@ -105,7 +101,6 @@ impl Agent {
                     error!("Error sending message: {:?}", e)
                 }
             }
-            drop(sender);
             Ok(Python::with_gil(|py| py.None()))
         })
     }

@@ -66,5 +66,8 @@ class Rakun:
 
     async def start(self, driver=None):
         # await start_agents(self.registry.all)
-        tasks = [self.loop.create_task(agent.start()) for agent in self.registry.all]
-        await asyncio.tas
+
+        try:
+            await asyncio.gather(*[agent.start() for agent in self.registry.all])
+        except Exception as e:
+            print(f"Exception name:{e}")
