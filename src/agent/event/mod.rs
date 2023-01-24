@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use log::debug;
 use pyo3::{prelude::*};
 

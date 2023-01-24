@@ -5,7 +5,7 @@ mod driver;
 use std::sync::{Arc, Mutex};
 use log::{debug, error};
 use pyo3::{prelude::*};
-use crate::agent::driver::Driver;
+use crate::agent::driver::{DriverManager};
 use crate::agent::event::{EventManager};
 use crate::agent::message::Message;
 
@@ -16,7 +16,7 @@ pub struct Agent {
     #[pyo3(get)]
     pub domain: String,
     pub event_manager: Arc<Mutex<EventManager>>,
-    pub driver: Arc<Driver>,
+    pub driver: Arc<DriverManager>,
 }
 
 #[pymethods]
@@ -32,7 +32,7 @@ impl Agent {
         Agent {
             domain,
             event_manager: Arc::new(Mutex::new(EventManager::default())),
-            driver: Arc::new(Driver::new()),
+            driver: Arc::new(DriverManager::new()),
         }
     }
 
